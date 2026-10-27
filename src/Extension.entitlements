@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Quick Look extensions must be sandboxed. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.files.user-selected.read-only</key>
+	<true/>
+	<!-- WKWebView's helper processes won't start in a sandboxed extension
+	     without this, even though the page loads nothing from the network. -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+</dict>
+</plist>

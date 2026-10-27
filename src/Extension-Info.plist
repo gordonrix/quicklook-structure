@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>com.grix.structurepreview.extension</string>
+	<key>CFBundleName</key>
+	<string>Structure Preview Extension</string>
+	<key>CFBundleDisplayName</key>
+	<string>Structure Preview</string>
+	<key>CFBundleExecutable</key>
+	<string>StructurePreviewExtension</string>
+	<key>CFBundlePackageType</key>
+	<string>XPC!</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>12.0</string>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.quicklook.preview</string>
+		<key>NSExtensionPrincipalClass</key>
+		<string>PreviewViewController</string>
+		<key>NSExtensionAttributes</key>
+		<dict>
+			<key>QLSupportedContentTypes</key>
+			<array>
+				<string>org.rcsb.pdb</string>
+				<string>org.wwpdb.mmcif</string>
+			</array>
+			<key>QLSupportsSearchableItems</key>
+			<false/>
+			<key>QLIsDataBasedPreview</key>
+			<false/>
+		</dict>
+	</dict>
+</dict>
+</plist>

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Structure preview</title>
+<!--
+  Quick Look viewer for .pdb / .cif files.
+
+  Styling follows generate_and_align_structures/pipeline/gas_html.py
+  (render_structure_html, modern=True): white background, orthographic
+  projection with a thin black outline, oval cartoon with arrows, the GAS
+  categorical palette (one color per chain), ligands as magentaCarbon sticks,
+  and the same multi-line hover label.
+
+  build.sh inlines 3Dmol-min.js at the __3DMOL__ marker; the extension splices
+  the file contents in at __ARGS__ for each preview.
+-->
+<style>
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex; flex-direction: column; box-sizing: border-box;
+    padding: 12px 16px 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: white; color: #212121;
+  }
+  h1 { font-size: 15px; font-weight: 600; margin: 0 0 2px;
+       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sub { font-size: 12px; color: #777; margin-bottom: 6px; }
+  .legend { font-size: 12px; color: #555; margin-bottom: 6px; line-height: 1.7; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px;
+            vertical-align: middle; margin-right: 4px; }
+  .legend-row { display: inline-block; margin-right: 14px; white-space: nowrap; }
+  .legend-row .n { color: #999; }
+  #viewer { position: relative; flex: 1; min-height: 200px; }
+  #msg { position: absolute; inset: 0; display: flex; align-items: center;
+         justify-content: center; font-size: 13px; color: #b3261e; }
+</style>
+</head>
+<body>
+<h1 id="title"></h1>
+<div class="sub" id="sub"></div>
+<div class="legend" id="legend"></div>
+<div id="viewer"></div>
+<script>
+/*__3DMOL__*/
+</script>
+<script>
+// Same categorical palette as gas_html.DEFAULT_PALETTE.
+const PALETTE = [
+  "#00bcd4", "#e91e63", "#ffc107", "#fa8072",
+  "#8bc34a", "#607d8b", "#009688", "#ff9800",
+  "#3f51b5", "#f06292",
+];
+const LIGAND_COLORSCHEME = "magentaCarbon";
+const WATER = ["HOH", "WAT", "DOD", "H2O"];
+// Chains shorter than this are drawn as sticks too; a cartoon of a 5-mer
+// reads as a broken stub rather than a peptide.
+const STICK_THRESHOLD = 8;
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+}
+
+function fail(msg) {
+  document.getElementById("viewer").innerHTML = '<div id="msg">' + esc(msg) + "</div>";
+}
+
+function render(a) {
+  document.getElementById("title").textContent = a.name;
+  document.title = a.name;
+  if (typeof $3Dmol === "undefined") return fail("3Dmol failed to load");
+
+  let viewer, atoms;
+  try {
+    viewer = $3Dmol.createViewer(document.getElementById("viewer"),
+                                 {backgroundColor: "white", antialias: true});
+    const model = viewer.addModel(a.data, a.fmt);
+    atoms = model.selectedAtoms({});
+  } catch (e) {
+    return fail("Could not parse " + a.name + ": " + e.message);
+  }
+  if (!atoms || !atoms.length) return fail("No atoms found in " + a.name);
+
+  // Chains in order of first appearance, with polymer residue counts.
+  const chains = [], byId = {};
+  let nRes = 0;
+  for (const at of atoms) {
+    let c = byId[at.chain];
+    if (!c) { c = byId[at.chain] = {id: at.chain, res: new Set(), het: false}; chains.push(c); }
+    if (!at.hetflag) c.res.add(at.resi + (at.icode || ""));
+    else if (!WATER.includes(at.resn)) c.het = true;
+  }
+
+  try {
+    viewer.setProjection("orthographic");
+    viewer.setViewStyle({style: "outline", color: "black", width: 0.04});
+  } catch (e) { /* cosmetic */ }
+
+  const legend = [];
+  let ci = 0;
+  for (const c of chains) {
+    const n = c.res.size;
+    nRes += n;
+    if (!n) {
+      if (c.het) legend.push('<span class="legend-row"><span class="swatch" style="background:#ff00ff"></span>'
+                             + esc(c.id || "-") + ' <span class="n">ligand</span></span>');
+      continue;
+    }
+    const color = PALETTE[ci++ % PALETTE.length];
+    viewer.setStyle({chain: c.id, hetflag: false},
+                    {cartoon: {color: color, opacity: 1.0, style: "oval", arrows: true}});
+    if (n < STICK_THRESHOLD) {
+      viewer.addStyle({chain: c.id, hetflag: false}, {stick: {color: color, radius: 0.16}});
+    }
+    legend.push('<span class="legend-row"><span class="swatch" style="background:' + color + '"></span>'
+                + esc(c.id || "-") + ' <span class="n">' + n + " res</span></span>");
+  }
+  // Non-polymer residues (ligands, cofactors, ions) draw no cartoon at all, so
+  // give them element-colored sticks. Waters stay hidden.
+  viewer.addStyle({hetflag: true, not: {resn: WATER}},
+                  {stick: {colorscheme: LIGAND_COLORSCHEME, radius: 0.18}});
+
+  const nPoly = chains.filter(c => c.res.size).length;
+  document.getElementById("sub").textContent =
+    nPoly + (nPoly === 1 ? " chain" : " chains") + " · " + nRes.toLocaleString() + " residues · "
+    + atoms.length.toLocaleString() + " atoms · " + (a.fmt === "cif" ? "mmCIF" : "PDB");
+  document.getElementById("legend").innerHTML = legend.join("");
+
+  // Hover label, as in gas_html._hover_callbacks: chain / residue / B-factor
+  // (pLDDT for AF and Boltz models).
+  viewer.setHoverable({}, true, function (atom, v) {
+    if (window.hoverLabel) { v.removeLabel(window.hoverLabel); window.hoverLabel = null; }
+    if (!atom.resi) return;
+    const lines = ["chain " + atom.chain];
+    let resLine = atom.resn + atom.resi;
+    if (typeof atom.b === "number" && atom.b > 0) resLine += "  |  B " + atom.b.toFixed(1);
+    lines.push(resLine);
+    window.hoverLabel = v.addLabel(lines.join("\n"),
+      {backgroundColor: "lightgray", fontColor: "black", backgroundOpacity: 0.85,
+       fontSize: 11, alignment: "centerLeft"},
+      atom.atom === "CA" ? {chain: atom.chain, resi: atom.resi, atom: "CA"}
+                         : {chain: atom.chain, resi: atom.resi});
+  }, function (atom, v) {
+    if (window.hoverLabel) { v.removeLabel(window.hoverLabel); window.hoverLabel = null; }
+  });
+
+  // zoomTo fits the bounding sphere, which leaves a lot of margin in
+  // orthographic mode; tighten it so the molecule fills the Quick Look panel.
+  viewer.zoomTo();
+  viewer.zoom(1.6);
+  viewer.render();
+}
+
+render(/*__ARGS__*/);
+</script>
+</body>
+</html>

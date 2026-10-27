@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>com.grix.structurepreview</string>
+	<key>CFBundleName</key>
+	<string>Structure Preview</string>
+	<key>CFBundleDisplayName</key>
+	<string>Structure Preview</string>
+	<key>CFBundleExecutable</key>
+	<string>StructurePreview</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>12.0</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<!-- Nothing on this Mac declares .pdb/.cif, so they resolve to dyn.* types
+	     that no extension can target. Import named types for them. Conforming
+	     to public.plain-text keeps the plain-text preview as a fallback. -->
+	<key>UTImportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>org.rcsb.pdb</string>
+			<key>UTTypeDescription</key>
+			<string>Protein Data Bank structure</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.plain-text</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>pdb</string>
+					<string>ent</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>chemical/x-pdb</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>org.wwpdb.mmcif</string>
+			<key>UTTypeDescription</key>
+			<string>mmCIF structure</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.plain-text</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>cif</string>
+					<string>mmcif</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>chemical/x-mmcif</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+</dict>
+</plist>
